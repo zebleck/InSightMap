@@ -9,6 +9,9 @@ from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import openai
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+from flask_login import LoginManager, login_user, logout_user
 
 uri = "bolt://graphdb:7687"
 
@@ -17,7 +20,36 @@ images_path = "uploaded_images"
 load_dotenv()
 
 app = Flask(__name__, static_folder=images_path, static_url_path="/uploaded_images")
+app.config['SECRET_KEY'] = 'a-very-secret-key-that-should-be-changed'
 CORS(app)
+
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///insightmap.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
+login_manager = LoginManager(app)
+
+# User model
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password_hash, password)
+
+    @property
+    def is_active(self):
+        """True, as all users are active."""
+        return True
+
+    def get_id(self):
+        return str(self.id)
 
 if not os.path.exists(images_path):
     os.makedirs(images_path)
@@ -96,17 +128,6 @@ def validate_edges(edges, nodes):
 File endpoints
 -----------------------
 """
-
-
-"""@app.route("/files_path", methods=["GET", "POST"])
-def files_path_endpoint():
-    if request.method == "POST":
-        global files_path
-        logging.warn(f"Setting files_path to {request.json.get('path')}")
-        files_path = request.json.get("path")
-        return jsonify(success=True)
-    else:
-        return jsonify(path=files_path)"""
 
 
 @app.route("/graph/saveNode/<nodename>", methods=["POST"])
@@ -287,7 +308,6 @@ def generate_unique_session_id():
 def generate_tree_func(selection):
     prompt = f"Perform a multi-dimensional analysis of {selection} by constructing a Tree of Abstraction. Start from the immediate, tangible actions and delve into deeper layers of complexity, adapting your approach as needed to capture the unique aspects of this activity. Your analysis may include, but is not limited to, the biological, psychological, social, technological, economic, and philosophical dimensions. Provide a comprehensive and insightful exploration, and identify intersections between different layers of abstraction where relevant. Return in markdown."
 
-    # prompt = f"Outline a Tree of Abstraction for the topic of {selection}. Start with immediate, tangible actions and delve into deeper layers of complexity. Your outline should be formatted as a nested list, and please make sure to think about how each layer or node might connect to others before you begin. Your analysis may include categories like biological, psychological, social, technological, economic, and philosophical dimensions, among others. Begin by contemplating the general structure of this tree and possible connections between nodes, then proceed to outline these nodes and connections. Note: This is a preliminary outline and should focus only on the headers or titles for each node without going into details. Return in markdown."
     def generate():
         response = openai.ChatCompletion.create(
             model="gpt-4-1106-preview",
@@ -435,6 +455,42 @@ def request_sse():
     else:
         return "Session not found", 404
 
+
+@app.route("/register", methods=["POST"])
+def register():
+    # Get data from request
+    username = request.json.get("username")
+    email = request.json.get("email")
+    password = request.json.get("password")
+
+    # Check if user already exists
+    user_exists = User.query.filter((User.username == username) | (User.email == email)).first()
+    if user_exists:
+        return jsonify({"error": "User already exists"}), 409
+
+    # Create new user and set password
+    new_user = User(username=username, email=email)
+    new_user.set_password(password)
+
+    # Add new user to the database
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({"success": "User registered successfully"}), 201
+
+@app.route("/login", methods=["POST"])
+def login():
+    # Get data from request
+    username = request.json.get("username")
+    password = request.json.get("password")
+
+    # Check if user exists
+    user = User.query.filter_by(username=username).first()
+    if user and user.check_password(password):
+        login_user(user)
+        return jsonify({"success": "Logged in successfully"}), 200
+    else:
+        return jsonify({"error": "Invalid username or password"}), 401
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)

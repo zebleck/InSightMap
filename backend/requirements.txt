@@ -8,6 +8,9 @@ charset-normalizer==3.2.0
 click==8.1.7
 Flask==2.3.3
 Flask-Cors==4.0.0
+flask_sqlalchemy==2.5.1
+flask_bcrypt==1.0.1
+flask_login==0.6.3
 frozenlist==1.4.0
 gevent==23.7.0
 greenlet==2.0.2
@@ -32,3 +35,4 @@ yarl==1.9.2
 zipp==3.16.2
 zope.event==5.0
 zope.interface==6.0
+SQLAlchemy==1.4.31
