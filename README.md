@@ -1,10 +1,9 @@
 <p align="center">
   <img src="https://github.com/zebleck/InSightMap/assets/10833180/5943f178-d55d-40a7-ab52-1aa11f936b8a" height="400px" />
-  
-  
-  <h3 align="center">🧠 InsightMap</h3>
-  <p align="center">A Next-generation Knowledge Management Platform</p>
 </p>
+
+<h3 align="center">🧠 InsightMap</h3>
+<p align="center">A Next-generation Knowledge Management Platform</p>
 
 ## Description
 
@@ -18,6 +17,7 @@ InsightMap is a knowledge management platform that seamlessly integrates a vast 
 - 🤖 **Integration of generative AI**: Answer questions and generate knowledge nodes using latest OpenAI model `gpt-4-1106-preview`.
 - 🖼️ **Image support**: Paste images from your clipboard into the markdown editor.
 - 📄 **PDF Export**: Easily convert your Markdown notes, along with embedded images and expanded links, into downloadable PDFs.
+- 🔐 **Self-Contained Login System**: A secure login system with user authentication, allowing for personalized user experiences and secure access.
 
 ## Tech Stack
 
@@ -25,6 +25,7 @@ InsightMap is a knowledge management platform that seamlessly integrates a vast 
 - Frontend: React.js including lots of libraries. It's like the python of frontends!
 - Styling: Bootstrap
 - Markdown Rendering: `markdown-it`, `react-simplemde-editor`, `markdown-it-katex`
+- Authentication: Flask-Login, Flask-Bcrypt for password hashing
 
 ## Installation & Setup
 
@@ -32,23 +33,36 @@ InsightMap is a knowledge management platform that seamlessly integrates a vast 
    ```bash
    git clone https://github.com/zebleck/InSightMap.git
    ```
-1. Navigate to the backend folder and create a .env file with your OpenAI API key
+2. Navigate to the backend folder and create a .env file with your OpenAI API key
    ```bash
    cd backend
    echo "OPENAI_KEY=your_openai_api_key" > .env
    ```
-3. Navigate to the frontend folder and install packages
+3. Install backend dependencies and initialize the database
+   ```bash
+   pip install -r requirements.txt
+   python init_db.py
+   ```
+4. Navigate to the frontend folder and install packages
    ```bash
    cd ../frontend
    npm install
    ```
-4. In the root folder, build and start the docker container
+5. In the root folder, build and start the docker container
    ```bash
    cd ..
    docker-compose build
    docker-compose up
    ```
-5. The frontend should be accessible at port 3000.
+6. The frontend should be accessible at port 3000, and the backend at port 5001.
+
+## Authentication
+
+To set up the user authentication system:
+
+1. Ensure the database is initialized with `init_db.py` as described in the installation steps.
+2. Use the `/register` endpoint to create new user accounts.
+3. Use the `/login` endpoint to authenticate users.
 
 ## Contributing
 
