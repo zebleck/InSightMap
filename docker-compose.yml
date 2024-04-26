@@ -17,7 +17,7 @@ services:
     working_dir: /app
     volumes:
       - ./backend:/app
-      - ${FILES_PATH}:/app/files
+      - ./backend/files:/app/files
     ports:
       - '5001:5001'
     environment:
